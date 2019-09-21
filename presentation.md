@@ -17,14 +17,18 @@ Lightbend
 # History
 
 * Started as an Akka Extension called Eventsourced by Martin Krasser
-* Brought into Akka as Akka Persistence (untyped) in 2.4.0
-* Akka Persistence Query in 2.5.0
+* Brought into Akka as Akka Persistence in Akka 2.4.0
+* Akka Persistence Query in Akka 2.5.0
 * Akka Persistence Typed (upcoming 2.6.0)
 
 ^ Eventsourced initial commit dates from Jul 2012
 
 ^ It's important to keep in mind that Akka Persistence is an Event Sourcing library. It's not about CQRS, but of course it gives you the means to build a CQRS application with it.
 
+# Code examples based on Akka 2.6.0-M7
+
+[.header:#FFFFFF, alignment(center), text-scale(1.8), Fira Sans]
+[.background-color: #13719F]
 
 # Akka Typed - protocol
 
@@ -259,8 +263,8 @@ def behavior(id: String): EventSourcedBehavior[AccountCommand, AccountEvent, Acc
 
 * Manage state over different JVMs
 * Knows where is your instance
-* Entity Passivation  
 * Honours single writer principle for Persistence
+* Entity Passivation  
 * Rolling updates without downtime
 * Commands must be serializable
 
@@ -323,10 +327,11 @@ val account: EntityRef[AccountCommand] =
 * Declarative API
 * Developer can concentrate on modelling
 * Types everywhere
-* And functions9
+* And functions
 * `Any => Unit` is part of the past
 
 ##  
+
 * Event Sourcing opens the door for decoupling your services
 * High throughput with append only journals  
 * Scalability with Cluster Sharding
