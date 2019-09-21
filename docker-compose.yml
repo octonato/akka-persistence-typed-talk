@@ -1,0 +1,9 @@
+postgres:
+  image: akka-jdbc-postgres:latest
+  container_name: akka_persistence_typed_postgres
+  environment:
+    - "TZ=Europe/Amsterdam"
+    - "POSTGRES_USER=docker"
+    - "POSTGRES_PASSWORD=docker"
+  ports:
+    - "5432:5432" 
