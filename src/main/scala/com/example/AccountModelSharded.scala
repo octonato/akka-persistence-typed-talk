@@ -119,7 +119,7 @@ object ShardedApp {
 
     clusterSharding.init(
       Entity(Account.typeKey) { ctx => Account.behavior(ctx) }
-      .withSettings(ClusterShardingSettings(typedActorSystem).withPassivateIdleEntityAfter(5.seconds))
+        .withSettings(ClusterShardingSettings(typedActorSystem).withPassivateIdleEntityAfter(5.seconds))
     )
     val account: EntityRef[AccountCommand] = clusterSharding.entityRefFor(Account.typeKey, "abc")
   }
