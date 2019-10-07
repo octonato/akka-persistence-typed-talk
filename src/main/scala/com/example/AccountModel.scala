@@ -23,16 +23,16 @@ object AccountModel {
    */
   case class Account(balance: Double) {
 
-    def applyCommand(command: AccountCommand): Effect[AccountEvent, Account] =
+    def applyCommand(command: AccountCommand[_]): Effect[AccountEvent, Account] =
       command match {
-        case Deposit(amount, replyTo) =>
+        case c @ Deposit(amount, replyTo) =>
           Effect
             .persist(Deposited(amount))
-            .thenRun(_ => replyTo ! Accepted)
+            .thenReply(c)(_ => Accepted)
+        // .thenRun(_ => replyTo ! Accepted)
 
-        case Withdraw(amount, replyTo) if balance - amount < 0 =>
-          Effect.none
-            .thenRun(_ => replyTo ! Rejected("Insufficient balance!"))
+        case c @ Withdraw(amount, replyTo) if balance - amount < 0 =>
+          Effect.reply(c)(Rejected("Insufficient balance!"))
 
         case Withdraw(amount, replyTo) =>
           Effect
@@ -59,8 +59,8 @@ object AccountModel {
 
     def empty: Account = Account(balance = 0)
 
-    def behavior(id: String): EventSourcedBehavior[AccountCommand, AccountEvent, Account] = {
-      EventSourcedBehavior[AccountCommand, AccountEvent, Account](
+    def behavior(id: String): EventSourcedBehavior[AccountCommand[_], AccountEvent, Account] = {
+      EventSourcedBehavior[AccountCommand[_], AccountEvent, Account](
         persistenceId = PersistenceId(id),
         emptyState = Account.empty,
         commandHandler = (account, cmd) => account.applyCommand(cmd),
@@ -76,10 +76,10 @@ object AccountModel {
   case object Accepted extends Accepted
   case class Rejected(reason: String) extends Confirmation
 
-  sealed trait AccountCommand
-  final case class Deposit(amount: Double, replyTo: ActorRef[Accepted]) extends AccountCommand
-  final case class Withdraw(amount: Double, replyTo: ActorRef[Confirmation]) extends AccountCommand
-  case class GetBalance(replyTo: ActorRef[Balance]) extends AccountCommand
+  sealed trait AccountCommand[R <: AccountReply] extends ExpectingReply[R]
+  final case class Deposit(amount: Double, replyTo: ActorRef[Accepted]) extends AccountCommand[Accepted]
+  final case class Withdraw(amount: Double, replyTo: ActorRef[Confirmation]) extends AccountCommand[Confirmation]
+  case class GetBalance(replyTo: ActorRef[Balance]) extends AccountCommand[Balance]
 
   sealed trait AccountEvent
   final case class Deposited(amount: Double) extends AccountEvent

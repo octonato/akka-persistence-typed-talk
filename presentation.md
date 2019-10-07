@@ -25,7 +25,7 @@ Lightbend
 
 ^ It's important to keep in mind that Akka Persistence is an Event Sourcing library. It's not about CQRS, but of course it gives you the means to build a CQRS application with it.
 
-# Code examples based on Akka 2.6.0-M7
+# Code examples based on Akka 2.6.0-M8
 
 [.header:#FFFFFF, alignment(center), text-scale(1.8), Fira Sans]
 [.background-color: #13719F]
@@ -67,30 +67,9 @@ def behavior(greeting: String): Behavior[Message] =
 ^ After each message, you define what is the next behavior.  
 You can stay on the same behavior or you can change it.  
 
-
-# Akka Typed - ActorContext
-
-<!-- #hello-behaviour-ctx -->
-```scala
-def behaviorCtx(greeting: String): Behavior[Message] =
-  Behaviors.setup { ctx: ActorContext[Message] =>
-    Behaviors.receiveMessage {
-      case SayHello(name) =>
-        ctx.log.info(s"$greeting $name!")
-        Behaviors.same
-      case ChangeGreeting(greet) =>
-        behavior(greet)
-    }
-  }
-```
-<!-- #hello-behaviour-ctx -->
-
-^ Because its a function we don't have access to Actor Context. There is no logging, no sender(), etc.
-^ In order to access some actor facilities, we need to bring an ActorContext into scope.
-
 # Akka Typed - ask pattern
 
-There is no 'sender'. If you need to respond to an 'ask', your incoming message must have an *ActorRef[R]* that you can use to respond.
+There is no *sender()*. If you need to reply to an *ask*, your incoming message must have an *ActorRef[R]* that you can use to reply to.
 
 <!-- #hello-behaviour-ask -->
 ```scala
@@ -197,7 +176,7 @@ case class Account(balance: Double) {
 def behavior(id: String): EventSourcedBehavior[AccountCommand, AccountEvent, Account] = {
   
   EventSourcedBehavior[AccountCommand, AccountEvent, Account](
-    persistenceId = PersistenceId(id),
+    persistenceId = PersistenceId("Account", id),
     emptyState = Account(balance = 0),
     // command handler: (State, Command) => Effect
     commandHandler = (account, cmd) => account.applyCommand(cmd),
@@ -214,7 +193,7 @@ def behavior(id: String): EventSourcedBehavior[AccountCommand, AccountEvent, Acc
 def behavior(id: String): EventSourcedBehavior[AccountCommand, AccountEvent, Account] = {
   
   EventSourcedBehavior[AccountCommand, AccountEvent, Account](
-    persistenceId = PersistenceId(id),
+    persistenceId = PersistenceId("Account", id),
     emptyState = Account(balance = 0),
     commandHandler = (account, cmd) => account.applyCommand(cmd),
     eventHandler = (account, evt) => account.applyEvent(evt)
@@ -234,7 +213,7 @@ def behavior(id: String): EventSourcedBehavior[AccountCommand, AccountEvent, Acc
 def behavior(id: String): EventSourcedBehavior[AccountCommand, AccountEvent, Account] = {
   
   EventSourcedBehavior[AccountCommand, AccountEvent, Account](
-    persistenceId = PersistenceId(id),
+    persistenceId = PersistenceId("Account", id),
     emptyState = Account(balance = 0),
     commandHandler = (account, cmd) => account.applyCommand(cmd),
     eventHandler = (account, evt) => account.applyEvent(evt)
@@ -251,7 +230,7 @@ def behavior(id: String): EventSourcedBehavior[AccountCommand, AccountEvent, Acc
 }
 ```
 
-# Some live coding
+# Enforced Replies - live coding
 
 [.header:#FFFFFF, alignment(center), text-scale(1.8), Fira Sans]
 [.background-color: #13719F]
@@ -282,11 +261,11 @@ object Account {
 
   val typeKey = EntityTypeKey[AccountCommand]("Account")
   
-  def behavior(entityContext: EntityContext):  
+  def behavior(entityContext: EntityContext[AccountCommand]):  
     EventSourcedBehavior[AccountCommand, AccountEvent, Account] = {
   
       EventSourcedBehavior[AccountCommand, AccountEvent, Account](
-        persistenceId = PersistenceId(entityContext.entityId),
+        persistenceId = PersistenceId(entityContext.entityTypeKey.name, entityContext.entityId),
         emptyState = Account(balance = 0),
         commandHandler = (account, cmd) => account.applyCommand(cmd),
         eventHandler = (account, evt) => account.applyEvent(evt)
@@ -301,12 +280,9 @@ object Account {
 ```scala
 
 clusterSharding.init(
-    Entity(
-      Account.typeKey,
-      ctx: EntityContext => Account.behavior(ctx)
-    )
-  )
-``` 
+  Entity(Account.typeKey) { ctx => Account.behavior(ctx) }
+)
+```  
 
 [.header:#ff931e, alignment(left), text-scale(1.8), Fira Sans]
 
