@@ -40,11 +40,7 @@ val cluster = Cluster(typedActorSystem)
 val clusterSharding = ClusterSharding(typedActorSystem)
 
 clusterSharding.init(
-    Entity(
-      Account.typeKey,
-      ctx => Account.behavior(ctx)
-    )
-    // .withSettings(ClusterShardingSettings(typedActorSystem).withPassivateIdleEntitiesAfter(5.seconds))
+    Entity(Account.typeKey) { ctx => Account.behavior(ctx) }
   )
   
 

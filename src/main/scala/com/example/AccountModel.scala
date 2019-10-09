@@ -1,18 +1,15 @@
 package com.example
 
-import akka.persistence.typed.ExpectingReply
 import akka.Done
 import akka.actor.typed.ActorRef
 import akka.actor.typed.ActorSystem
 import akka.actor.typed.Behavior
 import akka.cluster.sharding.typed.scaladsl._
 import akka.persistence.journal.Tagged
-import akka.persistence.typed.ExpectingReply
 import akka.persistence.typed.PersistenceId
 import akka.persistence.typed.scaladsl.Effect
 import akka.persistence.typed.scaladsl.EventSourcedBehavior
 import akka.persistence.typed.scaladsl.ReplyEffect
-import akka.persistence.typed.ExpectingReply
 import akka.persistence.typed.scaladsl.RetentionCriteria
 import akka.actor.typed.scaladsl.Behaviors
 
@@ -23,16 +20,17 @@ object AccountModel {
    */
   case class Account(balance: Double) {
 
-    def applyCommand(command: AccountCommand[_]): Effect[AccountEvent, Account] =
+    def applyCommand(command: AccountCommand): Effect[AccountEvent, Account] =
       command match {
-        case c @ Deposit(amount, replyTo) =>
+        case Deposit(amount, replyTo) =>
           Effect
             .persist(Deposited(amount))
-            .thenReply(c)(_ => Accepted)
-        // .thenRun(_ => replyTo ! Accepted)
+            .thenRun(_ => replyTo ! Accepted)
 
-        case c @ Withdraw(amount, replyTo) if balance - amount < 0 =>
-          Effect.reply(c)(Rejected("Insufficient balance!"))
+        case Withdraw(amount, replyTo) if balance - amount < 0 =>
+          Effect
+            .none
+            .thenRun(_ => replyTo ! Rejected("Insufficient balance!"))
 
         case Withdraw(amount, replyTo) =>
           Effect
@@ -59,8 +57,8 @@ object AccountModel {
 
     def empty: Account = Account(balance = 0)
 
-    def behavior(id: String): EventSourcedBehavior[AccountCommand[_], AccountEvent, Account] = {
-      EventSourcedBehavior[AccountCommand[_], AccountEvent, Account](
+    def behavior(id: String): EventSourcedBehavior[AccountCommand, AccountEvent, Account] = {
+      EventSourcedBehavior[AccountCommand, AccountEvent, Account](
         persistenceId = PersistenceId(id),
         emptyState = Account.empty,
         commandHandler = (account, cmd) => account.applyCommand(cmd),
@@ -76,10 +74,10 @@ object AccountModel {
   case object Accepted extends Accepted
   case class Rejected(reason: String) extends Confirmation
 
-  sealed trait AccountCommand[R <: AccountReply] extends ExpectingReply[R]
-  final case class Deposit(amount: Double, replyTo: ActorRef[Accepted]) extends AccountCommand[Accepted]
-  final case class Withdraw(amount: Double, replyTo: ActorRef[Confirmation]) extends AccountCommand[Confirmation]
-  case class GetBalance(replyTo: ActorRef[Balance]) extends AccountCommand[Balance]
+  sealed trait AccountCommand
+  final case class Deposit(amount: Double, replyTo: ActorRef[Accepted]) extends AccountCommand
+  final case class Withdraw(amount: Double, replyTo: ActorRef[Confirmation]) extends AccountCommand
+  case class GetBalance(replyTo: ActorRef[Balance]) extends AccountCommand
 
   sealed trait AccountEvent
   final case class Deposited(amount: Double) extends AccountEvent
