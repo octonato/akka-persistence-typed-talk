@@ -15,9 +15,24 @@ import akka.actor.typed.scaladsl.Behaviors
 
 object AccountModel {
 
-  /**
-   * The current state held by the persistent entity.
-   */
+
+  sealed trait AccountReply
+  case class Balance(amount: Double) extends AccountReply
+  sealed trait Confirmation extends AccountReply
+  sealed trait Accepted extends Confirmation
+  case object Accepted extends Accepted
+  case class Rejected(reason: String) extends Confirmation
+
+  sealed trait AccountCommand
+  final case class Deposit(amount: Double, replyTo: ActorRef[Accepted]) extends AccountCommand
+  final case class Withdraw(amount: Double, replyTo: ActorRef[Confirmation]) extends AccountCommand
+  case class GetBalance(replyTo: ActorRef[Balance]) extends AccountCommand
+
+  sealed trait AccountEvent
+  final case class Deposited(amount: Double) extends AccountEvent
+  final case class Withdrawn(amount: Double) extends AccountEvent
+
+
   case class Account(balance: Double) {
 
     def applyCommand(command: AccountCommand): Effect[AccountEvent, Account] =
@@ -38,10 +53,9 @@ object AccountModel {
             .thenRun(_ => replyTo ! Accepted)
 
         case GetBalance(replyTo) =>
-          Effect.none
-            .thenRun { acc =>
-              replyTo ! Balance(balance)
-            }
+          Effect
+            .none
+            .thenRun(_ => replyTo ! Balance(balance))
       }
 
     def applyEvent(event: AccountEvent): Account = {
@@ -66,21 +80,6 @@ object AccountModel {
       )
     }
   }
-
-  sealed trait AccountReply
-  case class Balance(amount: Double) extends AccountReply
-  sealed trait Confirmation extends AccountReply
-  sealed trait Accepted extends Confirmation
-  case object Accepted extends Accepted
-  case class Rejected(reason: String) extends Confirmation
-
-  sealed trait AccountCommand
-  final case class Deposit(amount: Double, replyTo: ActorRef[Accepted]) extends AccountCommand
-  final case class Withdraw(amount: Double, replyTo: ActorRef[Confirmation]) extends AccountCommand
-  case class GetBalance(replyTo: ActorRef[Balance]) extends AccountCommand
-
-  sealed trait AccountEvent
-  final case class Deposited(amount: Double) extends AccountEvent
-  final case class Withdrawn(amount: Double) extends AccountEvent
+  
 
 }
