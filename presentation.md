@@ -19,13 +19,13 @@ Lightbend
 * Started as an Akka Extension called Eventsourced by Martin Krasser
 * Brought into Akka as Akka Persistence in Akka 2.4.0
 * Akka Persistence Query in Akka 2.5.0
-* Akka Persistence Typed (upcoming 2.6.0)
+* Akka Persistence Typed in Akka 2.6.0
 
 ^ Eventsourced initial commit dates from Jul 2012
 
 ^ It's important to keep in mind that Akka Persistence is an Event Sourcing library. It's not about CQRS, but of course it gives you the means to build a CQRS application with it.
 
-# Code examples based on Akka 2.6.0-M8
+# Code examples based on Akka 2.6.0. Yeah!!
 
 [.header:#FFFFFF, alignment(center), text-scale(1.8), Fira Sans]
 [.background-color: #13719F]

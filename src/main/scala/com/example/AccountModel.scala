@@ -73,7 +73,7 @@ object AccountModel {
 
     def behavior(id: String): EventSourcedBehavior[AccountCommand, AccountEvent, Account] = {
       EventSourcedBehavior[AccountCommand, AccountEvent, Account](
-        persistenceId = PersistenceId(id),
+        persistenceId = PersistenceId("Account", id),
         emptyState = Account.empty,
         commandHandler = (account, cmd) => account.applyCommand(cmd),
         eventHandler = (account, evt) => account.applyEvent(evt)

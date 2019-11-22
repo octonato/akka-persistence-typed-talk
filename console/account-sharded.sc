@@ -48,5 +48,5 @@ implicit val timeout = Timeout(3.seconds)
 implicit val scheduler = typedActorSystem.scheduler
 implicit val ec = typedActorSystem.executionContext 
 
-def entityRefFor(id: String): EntityRef[AccountCommand[_]] = 
+def entityRefFor(id: String): EntityRef[AccountCommand] = 
   clusterSharding.entityRefFor(Account.typeKey, id)
